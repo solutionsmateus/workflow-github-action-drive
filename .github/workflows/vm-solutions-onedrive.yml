@@ -40,33 +40,43 @@ jobs:
           Get-ChildItem -Recurse artifacts | Select-Object FullName, Length
 
       #Instalar rclone
+      # ... seus steps anteriores
+
       - name: Install rclone
         shell: pwsh
         run: choco install rclone -y
 
-
-      - name: Restore rclone.conf from base64 secret (Windows path)
+# Restaura o rclone.conf a partir de secret em base64
+      - name: Restore rclone.conf and set RCLONE_CONFIG
         shell: pwsh
         env:
           RCLONE_CONF_B64: ${{ secrets.RCLONE_CONF_B64 }}
         run: |
-          $confDir = Join-Path $env:APPDATA 'rclone'
-          New-Item -ItemType Directory -Force -Path $confDir | Out-Null
-          $confPath = Join-Path $confDir 'rclone.conf'
-          # Decodifica base64 preservando quebras de linha
-          [IO.File]::WriteAllBytes($confPath, [Convert]::FromBase64String($env:RCLONE_CONF_B64))
-          # Checagens
-          rclone listremotes
-          rclone config show
+         $confPath = Join-Path $env:RUNNER_TEMP 'rclone.conf'
+         [IO.File]::WriteAllBytes($confPath, [Convert]::FromBase64String($env:RCLONE_CONF_B64))
 
+         # Exporta RCLONE_CONFIG para todos os próximos steps
+         "RCLONE_CONFIG=$confPath" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+         # Sanidade: mostra o caminho de config que o rclone usará
+         rclone version
+         rclone config file
+         rclone listremotes
+
+     # Opcional: validar acesso antes do copy
+      - name: Probe OneDrive
+        shell: pwsh
+        env:
+         ONEDRIVE_FOLDER_PATH: "Shared/Grupo Mateus/Guilherme Soares de Macedo/RELATORIOS MKT - TESTE/"
+        run: |
+         rclone lsd onedrive:
+         rclone lsd ("onedrive:" + $env:ONEDRIVE_FOLDER_PATH) 
+
+# Copia artifacts para o OneDrive
       - name: Upload artifacts to OneDrive
         shell: pwsh
         env:
-          ONEDRIVE_FOLDER_PATH: "Shared/Grupo Mateus/Guilherme Soares de Macedo/RELATORIOS MKT - TESTE/"
+         ONEDRIVE_FOLDER_PATH: "Shared/Grupo Mateus/Guilherme Soares de Macedo/RELATORIOS MKT - TESTE/"
         run: |
-          # Opcional: validar acesso antes
-          rclone lsd onedrive:
-          rclone lsd ("onedrive:" + $env:ONEDRIVE_FOLDER_PATH)
-
-          rclone copy "artifacts" ("onedrive:" + $env:ONEDRIVE_FOLDER_PATH) `
-            --progress --transfers=8 --checkers=16 --create-empty-src-dirs
+         rclone copy "artifacts" ("onedrive:" + $env:ONEDRIVE_FOLDER_PATH) `
+         --progress --transfers=8 --checkers=16 --create-empty-src-dirs
