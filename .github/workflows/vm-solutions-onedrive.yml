@@ -1,61 +1,65 @@
-# This is a basic workflow to help you get started with Actions
-
 name: Workflow-onedrive-automatization
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
-
+    branches: ["main"]
   workflow_dispatch:
   schedule:
-    - cron: '0 13 * * *' # Todos os dias após baixar os Encartes colocar na pasta do onedrive.
+    - cron: '0 13 * * *'  # 10:00 America/Fortaleza
 
 jobs:
   build:
     runs-on: windows-latest
+    permissions:
+      contents: read
+      actions: read
 
     steps:
-    #Check atual repository
-      - name: Checkout repository 
+      - name: Checkout (este repo)
         uses: actions/checkout@v4
 
-    #Setup Python Environment with cache  
-      - name: Setup Python (com cache)
-        uses: actions/setup-python@v5
+      # Baixa artifacts do outro repositório
+      - name: Download artifacts from supermercados-code
+        uses: dawidd6/action-download-artifact@v6
         with:
-         python-version: "3.5"
-         cache: "pip"
-         cache-dependency-path: requirements.txt
+          repo: solutionsmateus/supermercados-code
+          workflow: vm-solutions-mateus.yml    # <-- nome do arquivo .yml no outro repo
+          branch: main
+          name: "*"                            # todos os artifacts deste run
+          path: artifacts
+          if_no_artifact_found: warn
 
-    #Install dependencies with python
-      - name: Instalar dependencias
+      - name: List downloaded artifacts
         shell: pwsh
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          echo "Conteúdo de artifacts:"
+          Get-ChildItem -Recurse artifacts | Select-Object FullName, Length
 
-    #Download all files from artifacts (supermercados-code) 
-      - name: Download files on supermercados-code
-        uses: actions/download-artifact@v4
-        with:
-         working-directory: workflow-github-action
+      # Instala rclone
+      - name: Install rclone
+        shell: pwsh
+        run: choco install rclone -y
 
-    #Setup OneDrive Autentication and Environment
-      - name: Setup OneDrive Autentication
-        uses: actions/checkout@v4
+      # Restaura o rclone.conf a partir do Secret
+      - name: Write rclone.conf from secret
+        shell: pwsh
         env:
-          ONEDRIVE_CLIENT_ID: ${{ secrets.ONEDRIVE_CLIENT_ID }}
-          ONEDRIVE_CLIENT_SECRET: ${{ secrets.ONEDRIVE_CLIENT_SECRET }}
-          ONEDRIVE_CLIENT_TOKEN: ${{ secrets.ONEDRIVE_CLIENT_TOKEN }}
-          ONEDRIVE_FOLDER: https://grupomateus-my.sharepoint.com/:f:/r/personal/guilherme_macedo_grupomateus_com/Documents/RELATORIOS%20MKT%20-%20TESTE?csf=1&web=1&e=sn945v
-      
-    #Run command to run scripts (Main Function)
-      - name: Main Function
+          RCLONE_CONFIG: ${{ secrets.RCLONE_CONFIG }}
         run: |
-         echo "Estes são os arquivos artifacts"
-         mkdir output
-         echo "Arquivos" > artifacts.txt
-         python.exe upload_to_onedrive.py artifacts.txt output/artifacts_output.txt
-         echo "Arquivos baixados com sucesso" 
+          $confDir = "$env:USERPROFILE\.config\rclone"
+          New-Item -ItemType Directory -Force -Path $confDir | Out-Null
+          Set-Content -Path (Join-Path $confDir "rclone.conf") -Value $env:RCLONE_CONFIG
+          # Valida a remota
+          rclone config show
+
+      # Copia tudo da pasta artifacts para a pasta no OneDrive
+      - name: Upload artifacts to OneDrive
+        shell: pwsh
+        env:
+          ONEDRIVE_FOLDER_PATH: "RELATORIOS MKT - TESTE"   # ajuste o caminho
+        run: |
+          # "onedrive:" é o nome da remota criada no rclone config
+          rclone copy "artifacts" ("onedrive:" + $env:ONEDRIVE_FOLDER_PATH) `
+            --progress --transfers=8 --checkers=16 --create-empty-src-dirs
