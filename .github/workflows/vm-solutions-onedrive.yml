@@ -39,29 +39,34 @@ jobs:
           echo "Conteúdo de artifacts:"
           Get-ChildItem -Recurse artifacts | Select-Object FullName, Length
 
-      # Instala rclone
+      #Instalar rclone
       - name: Install rclone
         shell: pwsh
         run: choco install rclone -y
 
-      # Restaura o rclone.conf a partir do Secret
-      - name: Write rclone.conf from secret
+
+      - name: Restore rclone.conf from base64 secret (Windows path)
         shell: pwsh
         env:
-          RCLONE_CONFIG: ${{ secrets.RCLONE_CONFIG }}
+          RCLONE_CONF_B64: ${{ secrets.RCLONE_CONF_B64 }}
         run: |
-          $confDir = "$env:USERPROFILE\.config\rclone"
+          $confDir = Join-Path $env:APPDATA 'rclone'
           New-Item -ItemType Directory -Force -Path $confDir | Out-Null
-          Set-Content -Path (Join-Path $confDir "rclone.conf") -Value $env:RCLONE_CONFIG
-          # Valida a remota
+          $confPath = Join-Path $confDir 'rclone.conf'
+          # Decodifica base64 preservando quebras de linha
+          [IO.File]::WriteAllBytes($confPath, [Convert]::FromBase64String($env:RCLONE_CONF_B64))
+          # Checagens
+          rclone listremotes
           rclone config show
 
-      # Copia tudo da pasta artifacts para a pasta no OneDrive
       - name: Upload artifacts to OneDrive
         shell: pwsh
         env:
-          ONEDRIVE_FOLDER_PATH: "Shared/Grupo Mateus/Guilherme Soares de Macedo/RELATORIOS MKT - TESTE/"   # ajuste o caminho
+          ONEDRIVE_FOLDER_PATH: "Shared/Grupo Mateus/Guilherme Soares de Macedo/RELATORIOS MKT - TESTE/"
         run: |
-          # "onedrive:" é o nome da remota criada no rclone config
+          # Opcional: validar acesso antes
+          rclone lsd onedrive:
+          rclone lsd ("onedrive:" + $env:ONEDRIVE_FOLDER_PATH)
+
           rclone copy "artifacts" ("onedrive:" + $env:ONEDRIVE_FOLDER_PATH) `
             --progress --transfers=8 --checkers=16 --create-empty-src-dirs
