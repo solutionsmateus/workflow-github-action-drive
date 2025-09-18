@@ -24,13 +24,15 @@ jobs:
       - name: Download artifacts from supermercados-code
         uses: dawidd6/action-download-artifact@v6
         with:
-          repo: solutionsmateus/supermercados-code
-          workflow: vm-solutions-mateus
+          repo: solutionsmateus/workflow-github-action
+          workflow: vm-solutions-mateus.yml
           branch: main
           name: "*"                            # todos os artifacts deste run
           path: artifacts
           if_no_artifact_found: warn
+          token: ${{ secrets.MEUPAT }}
 
+      #Lista todos os artifacts baixados.
       - name: List downloaded artifacts
         shell: pwsh
         run: |
