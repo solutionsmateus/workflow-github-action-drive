@@ -25,8 +25,8 @@ jobs:
       - name: Setup Python (com cache)
         uses: actions/setup-python@v5
         with:
-         python-version: 3.5
-         cache: pip
+         python-version: "3.5"
+         cache: "pip"
          cache-dependency-path: requirements.txt
 
     #Install dependencies with python
@@ -34,7 +34,7 @@ jobs:
         shell: pwsh
         run: |
           python -m pip install --upgrade pip
-          python.exe requirements.txt
+          pip install -r requirements.txt
 
     #Download all files from artifacts (supermercados-code) 
       - name: Download files on supermercados-code
