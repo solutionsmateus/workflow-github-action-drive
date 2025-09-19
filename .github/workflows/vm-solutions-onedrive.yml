@@ -64,19 +64,19 @@ jobs:
          rclone listremotes
 
      # Opcional: validar acesso antes do copy
-      - name: Probe OneDrive
+      - name: Probe Sharepoint
         shell: pwsh
         env:
-         SHAREPOINT_FOLDER_PATH: "Shared/Grupo Mateus/Guilherme Soares de Macedo/RELATORIOS MKT - TESTE"
+         SHAREPOINT_FOLDER_PATH: "Shared/Grupo Mateus/Guilherme Soares de Macedo/Relatorios MKT"
         run: |
          rclone lsd sharepoint:
-         rclone lsd ("sharepoint:" + $env:ONEDRIVE_FOLDER_PATH) 
+         rclone lsd ("sharepoint:" + $env:SHAREPOINT_FOLDER_PATH) 
 
 # Copia artifacts para o OneDrive
-      - name: Upload artifacts to OneDrive
+      - name: Upload artifacts to Sharepoint
         shell: pwsh
         env:
-         SHAREPOIN_FOLDER_PATH: "Shared/Grupo Mateus/Guilherme Soares de Macedo/RELATORIOS MKT - TESTE"
+         SHAREPOIN_FOLDER_PATH: "Shared/Grupo Mateus/Guilherme Soares de Macedo/Relatorios MKT"
         run: |
-         rclone copy "artifacts" ("sharepoint:" + $env:ONEDRIVE_FOLDER_PATH) `
+         rclone copy "artifacts" ("sharepoint:" + $env:SHAREPOINT_FOLDER_PATH) `
          --progress --transfers=8 --checkers=16 --create-empty-src-dirs
