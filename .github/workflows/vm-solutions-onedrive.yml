@@ -67,7 +67,7 @@ jobs:
       - name: Probe OneDrive
         shell: pwsh
         env:
-         SHAREPOINT_FOLDER_PATH: "Shared/Grupo Mateus/Guilherme Soares de Macedo/RELATORIOS MKT - TESTE/"
+         SHAREPOINT_FOLDER_PATH: "Shared/Grupo Mateus/Guilherme Soares de Macedo/RELATORIOS MKT - TESTE"
         run: |
          rclone lsd sharepoint:
          rclone lsd ("sharepoint:" + $env:ONEDRIVE_FOLDER_PATH) 
@@ -76,7 +76,7 @@ jobs:
       - name: Upload artifacts to OneDrive
         shell: pwsh
         env:
-         SHAREPOIN_FOLDER_PATH: "Shared/Grupo Mateus/Guilherme Soares de Macedo/RELATORIOS MKT - TESTE/"
+         SHAREPOIN_FOLDER_PATH: "Shared/Grupo Mateus/Guilherme Soares de Macedo/RELATORIOS MKT - TESTE"
         run: |
          rclone copy "artifacts" ("sharepoint:" + $env:ONEDRIVE_FOLDER_PATH) `
          --progress --transfers=8 --checkers=16 --create-empty-src-dirs
