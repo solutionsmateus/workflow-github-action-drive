@@ -67,7 +67,7 @@ jobs:
       - name: Probe Sharepoint
         shell: pwsh
         env:
-         SHAREPOINT_FOLDER_PATH: "Shared/Grupo Mateus/Guilherme Soares de Macedo/Relatorios MKT"
+         SHAREPOINT_FOLDER_PATH: "Shared/Grupo Mateus/Guilherme Soares de Macedo/Ficheiros de Guilherme Soares de Macedo - Relatorios MKT"
         run: |
          rclone lsd sharepoint:
          rclone lsd ("sharepoint:" + $env:SHAREPOINT_FOLDER_PATH) 
@@ -76,7 +76,7 @@ jobs:
       - name: Upload artifacts to Sharepoint
         shell: pwsh
         env:
-         SHAREPOIN_FOLDER_PATH: "Shared/Grupo Mateus/Guilherme Soares de Macedo/Relatorios MKT"
+         SHAREPOIN_FOLDER_PATH: "Shared/Grupo Mateus/Guilherme Soares de Macedo/Ficheiros de Guilherme Soares de Macedo - Relatorios MKT"
         run: |
          rclone copy "artifacts" ("sharepoint:" + $env:SHAREPOINT_FOLDER_PATH) `
          --progress --transfers=8 --checkers=16 --create-empty-src-dirs
