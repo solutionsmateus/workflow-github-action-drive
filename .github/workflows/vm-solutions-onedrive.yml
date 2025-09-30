@@ -27,56 +27,18 @@ jobs:
           repo: solutionsmateus/workflow-github-action
           workflow: vm-solutions-mateus.yml
           branch: main
-          name: "*"                            # todos os artifacts deste run
+          name: "*"                      
           path: artifacts
           if_no_artifact_found: warn
           token: ${{ secrets.MEUPAT }}
 
       #Lista todos os artifacts baixados.
-      - name: List downloaded artifacts
+      - name: Drive the files to ZIP.
         shell: pwsh
         run: |
           echo "Conteúdo de artifacts:"
           Get-ChildItem -Recurse artifacts | Select-Object FullName, Length
 
-      #Instalar rclone
-      # ... seus steps anteriores
 
-      - name: Install rclone
-        shell: pwsh
-        run: choco install rclone -y
 
-# Restaura o rclone.conf a partir de secret em base64
-      - name: Restore rclone.conf and set RCLONE_CONFIG
-        shell: pwsh
-        env:
-          RCLONE_CONF_B64: ${{ secrets.RCLONE_CONF_B64 }}
-        run: |
-         $confPath = Join-Path $env:RUNNER_TEMP 'rclone.conf'
-         [IO.File]::WriteAllBytes($confPath, [Convert]::FromBase64String($env:RCLONE_CONF_B64))
-
-         # Exporta RCLONE_CONFIG para todos os próximos steps
-         "RCLONE_CONFIG=$confPath" | Out-File -FilePath $env:GITHUB_ENV -Append
-
-         # Sanidade: mostra o caminho de config que o rclone usará
-         rclone version
-         rclone config file
-         rclone listremotes
-
-     # Opcional: validar acesso antes do copy
-      - name: Probe Sharepoint
-        shell: pwsh
-        env:
-         SHAREPOINT_FOLDER_PATH: "Shared/Grupo Mateus/Guilherme Soares de Macedo/Ficheiros de Guilherme Soares de Macedo - Relatorios MKT"
-        run: |
-         rclone lsd sharepoint:
-         rclone lsd ("sharepoint:" + $env:SHAREPOINT_FOLDER_PATH) 
-
-# Copia artifacts para o OneDrive
-      - name: Upload artifacts to Sharepoint
-        shell: pwsh
-        env:
-         SHAREPOIN_FOLDER_PATH: "Shared/Grupo Mateus/Guilherme Soares de Macedo/Ficheiros de Guilherme Soares de Macedo - Relatorios MKT"
-        run: |
-         rclone copy "artifacts" ("sharepoint:" + $env:SHAREPOINT_FOLDER_PATH) `
-         --progress --transfers=8 --checkers=16 --create-empty-src-dirs
+  
