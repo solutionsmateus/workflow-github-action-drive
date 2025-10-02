@@ -32,13 +32,34 @@ jobs:
           if_no_artifact_found: warn
           token: ${{ secrets.MEUPAT }}
 
+    #Setup Python v.3.13
+      - name: Setup Python v.3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency: requirements.txt 
+
+      #Instalar requirements.txt
+      - name: Instalar requirements.txt
+        shell: pwsh
+        run: |
+          python -m pip install --upgradable pip
+          python pip install requirements.txt
+
       #Lista todos os artifacts baixados.
-      - name: Drive the files to ZIP.
+      - name: Lista todos os artifacts baixados
         shell: pwsh
         run: |
           echo "Conteúdo de artifacts:"
           Get-ChildItem -Recurse artifacts | Select-Object FullName, Length
 
-
+      - name: Executar o Script Organizador
+        shell: pwsh
+        run: |
+           echo "Organizando os aruqivos em pastas"
+           Get-CHildItem -Recurse artifacts | Select-Object FullName, Length
+           python -m organizator.py
+           
 
   
